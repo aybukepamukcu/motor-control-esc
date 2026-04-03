@@ -1,0 +1,3 @@
+../Core/Src/bench_runner.c:7:6:BenchRunner_Step_Production	16	static
+../Core/Src/bench_runner.c:15:6:BenchRunner_Step_IgnoreNonBrakeFaults	8	static
+../Core/Src/bench_runner.c:23:6:BenchRunner_Step_OpenLoopDuty	16	static

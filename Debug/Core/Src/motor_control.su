@@ -1,0 +1,4 @@
+../Core/Src/motor_control.c:36:6:MotorControl_Init	4	static
+../Core/Src/motor_control.c:46:6:MotorControl_Update	24	static
+../Core/Src/motor_control.c:119:10:MotorControl_GetDuty	4	static
+../Core/Src/motor_control.c:127:7:MotorControl_GetFilteredCurrent	4	static

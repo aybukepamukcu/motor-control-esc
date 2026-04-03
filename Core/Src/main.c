@@ -25,6 +25,7 @@
 #include "motor_control.h"
 #include "safety.h"
 #include "commutation.h"
+#include "bench_runner.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +54,8 @@ FDCAN_HandleTypeDef hfdcan1;
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim1;
+
+uint32_t adc_buffer[2];
 
 /* USER CODE BEGIN PV */
 
@@ -106,9 +109,9 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
-  MX_FDCAN1_Init();
+  //MX_FDCAN1_Init();
   MX_TIM1_Init();
-  MX_I2C1_Init();
+  //MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   Sensors_Init();
   MotorControl_Init();
@@ -142,12 +145,10 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
-    Sensors_Update();
-    Safety_Update();
-    MotorControl_Update(Safety_IsBrakeActive(), Safety_IsFaultActive());
-    Commutation_Update(MotorControl_GetDuty());
+    BenchRunner_Step_IgnoreNonBrakeFaults();
 
     /* USER CODE END WHILE */
 
