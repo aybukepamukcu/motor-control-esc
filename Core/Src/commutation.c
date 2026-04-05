@@ -119,7 +119,7 @@ void Commutation_Update(uint16_t duty)
     return;
   }
 
-  ApplyCommutation(1, duty);
+  ApplyCommutation(hall, duty);
 }
 
 uint8_t Commutation_GetLastHallState(void)
