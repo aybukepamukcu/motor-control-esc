@@ -14,28 +14,36 @@
 #include "commutation.h"
 #include "main.h"
 
-#define HALL_A_PIN    GPIO_PIN_0
-#define HALL_B_PIN    GPIO_PIN_1
-#define HALL_C_PIN    GPIO_PIN_2
-#define HALL_GPIO     GPIOB
+static volatile uint8_t last_hall_state;
 
-extern TIM_HandleTypeDef htim1;
-
-static uint8_t last_hall_state;
+static const uint32_t HALL_CCER_TABLE[] =
+{
+  0U,
+  TIM_CCER_CC1E | TIM_CCER_CC2NE,
+  TIM_CCER_CC2E | TIM_CCER_CC3NE,
+  TIM_CCER_CC3E | TIM_CCER_CC1NE,
+  TIM_CCER_CC2E | TIM_CCER_CC1NE,
+  TIM_CCER_CC1E | TIM_CCER_CC3NE,
+  TIM_CCER_CC3E | TIM_CCER_CC2NE
+};
 
 static uint8_t ReadHallGPIO(void)
 {
-  uint8_t a = (HAL_GPIO_ReadPin(HALL_GPIO, HALL_A_PIN) == GPIO_PIN_SET) ? 1U : 0U;
-  uint8_t b = (HAL_GPIO_ReadPin(HALL_GPIO, HALL_B_PIN) == GPIO_PIN_SET) ? 1U : 0U;
-  uint8_t c = (HAL_GPIO_ReadPin(HALL_GPIO, HALL_C_PIN) == GPIO_PIN_SET) ? 1U : 0U;
-  return (uint8_t)((a << 0) | (b << 1) | (c << 2));
+  /* Read GPIOB PIN0-PIN1-PIN2 directly from the register. */
+  return (uint8_t)(GPIOB->IDR & (uint32_t)0x07);
 }
 
 static void SafeOff_AllPhases(void)
 {
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+  /* Disable all of the channels. */
+  TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE |
+                  TIM_CCER_CC2E | TIM_CCER_CC2NE |
+                  TIM_CCER_CC3E | TIM_CCER_CC3NE);
+
+  /* Set all of the duty cycles to zero. */
+  TIM1->CCR1 = 0;
+  TIM1->CCR2 = 0;
+  TIM1->CCR3 = 0;
 }
 
 static void LowSide_Activate(uint8_t phase)
@@ -50,39 +58,49 @@ static void LowSide_Deactivate(uint8_t phase)
 
 static void ApplyCommutation(uint8_t hall, uint16_t duty)
 {
-  SafeOff_AllPhases();
-
   switch (hall)
   {
     case 1:
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+      TIM1->CCR1 = duty;
+      TIM1->CCR2 = TIM1->ARR;
+      TIM1->CCR3 = 0;
+
+      TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2NE;
       break;
     case 2:
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, duty);
+      TIM1->CCR1 = 0;
+      TIM1->CCR2 = duty;
+      TIM1->CCR3 = TIM1->ARR;
+
+      TIM1->CCER |= TIM_CCER_CC2E | TIM_CCER_CC3NE;
       break;
     case 3:
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, duty);
+      TIM1->CCR1 = TIM1->ARR;
+      TIM1->CCR2 = 0;
+      TIM1->CCR3 = duty;
+
+      TIM1->CCER |= TIM_CCER_CC3E | TIM_CCER_CC1NE;
       break;
     case 4:
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, duty);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+      TIM1->CCR1 = TIM1->ARR;
+      TIM1->CCR2 = duty;
+      TIM1->CCR3 = 0;
+
+      TIM1->CCER |= TIM_CCER_CC2E | TIM_CCER_CC1NE;
       break;
     case 5:
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+      TIM1->CCR1 = duty;
+      TIM1->CCR2 = 0;
+      TIM1->CCR3 = TIM1->ARR;
+
+      TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3NE;
       break;
     case 6:
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, duty);
-      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+      TIM1->CCR1 = 0;
+      TIM1->CCR2 = TIM1->ARR;
+      TIM1->CCR3 = duty;
+
+      TIM1->CCER |= TIM_CCER_CC3E | TIM_CCER_CC2NE;
       break;
     default:
       break;
@@ -105,18 +123,19 @@ void Commutation_Update(uint16_t duty)
   uint8_t hall;
 
   hall = ReadHallGPIO();
-  last_hall_state = hall;
 
-  if (duty == 0U)
+  if (duty == 0U || !(hall >= 1 && hall <= 6))
   {
     SafeOff_AllPhases();
+    last_hall_state = 0U;
     return;
   }
 
-  if (hall == 0U || hall == 7U)
+  if (hall != last_hall_state)
   {
-    SafeOff_AllPhases();
-    return;
+    /* Disable the previously open channels. */
+    TIM1->CCER &= ~HALL_CCER_TABLE[last_hall_state];
+    last_hall_state = hall;
   }
 
   ApplyCommutation(hall, duty);

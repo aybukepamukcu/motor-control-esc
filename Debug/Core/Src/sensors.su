@@ -1,6 +1,0 @@
-../Core/Src/sensors.c:44:6:Sensors_Init	4	static
-../Core/Src/sensors.c:58:6:Sensors_Update	8	static
-../Core/Src/sensors.c:72:10:Sensors_GetThrottleRaw	4	static
-../Core/Src/sensors.c:80:10:Sensors_GetCurrentRaw	4	static
-../Core/Src/sensors.c:88:7:Sensors_GetTemperatureC	4	static
-../Core/Src/sensors.c:103:26:TMP102_ReadTemperature	32	static

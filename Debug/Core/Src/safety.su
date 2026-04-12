@@ -1,5 +1,0 @@
-../Core/Src/safety.c:21:6:Safety_Init	4	static
-../Core/Src/safety.c:28:6:Safety_Update	16	static
-../Core/Src/safety.c:60:9:Safety_IsBrakeActive	4	static
-../Core/Src/safety.c:65:9:Safety_IsFaultActive	4	static
-../Core/Src/safety.c:70:10:Safety_GetFaultFlags	4	static

@@ -26,10 +26,10 @@ extern I2C_HandleTypeDef hi2c1;
 
 /* Private variables ---------------------------------------------------------*/
 /* ADC DMA buffer: one conversion per index, filled continuously by DMA */
-static uint32_t adc_buffer[2];
+volatile uint16_t adc_value;
 
 /* Cached sensor values updated by Sensors_Update() */
-uint16_t throttle_raw;
+static uint16_t throttle_raw;
 static uint16_t current_raw;
 static float temperature_c;
 
@@ -46,10 +46,6 @@ void Sensors_Init(void)
   throttle_raw = 0U;
   current_raw  = 0U;
   temperature_c = 0.0f;
-
-  /* Start ADC in DMA circular mode - fills adc_buffer continuously.
-   * Cast to uint32_t* required by HAL_ADC_Start_DMA API. */
-  //HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buffer, 2);
 }
 
 /**
@@ -58,9 +54,8 @@ void Sensors_Init(void)
 void Sensors_Update(void)
 {
   /* Copy from ADC DMA buffer - one conversion per index */
-  //throttle_raw = adc_buffer[0];
-	//throttle_raw = 3000;
-  current_raw  = adc_buffer[1];
+  throttle_raw = adc_value;
+  current_raw  = 0U;
 
   /* Read TMP102 temperature over I2C */
   (void)TMP102_ReadTemperature(&temperature_c);

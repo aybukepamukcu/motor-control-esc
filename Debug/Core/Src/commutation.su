@@ -1,9 +1,0 @@
-../Core/Src/commutation.c:26:16:ReadHallGPIO	16	static
-../Core/Src/commutation.c:34:13:SafeOff_AllPhases	4	static
-../Core/Src/commutation.c:41:13:LowSide_Activate	16	static
-../Core/Src/commutation.c:46:13:LowSide_Deactivate	16	static
-../Core/Src/commutation.c:51:13:ApplyCommutation	16	static
-../Core/Src/commutation.c:92:6:Commutation_Init	8	static
-../Core/Src/commutation.c:98:9:Commutation_ReadHallState	8	static
-../Core/Src/commutation.c:103:6:Commutation_Update	24	static
-../Core/Src/commutation.c:125:9:Commutation_GetLastHallState	4	static
