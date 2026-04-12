@@ -35,8 +35,8 @@ void MotorControl_Init(void);
 void MotorControl_Update(uint8_t brake_active, uint8_t fault_active);
 
 /**
-  * @brief  Get current duty cycle command (0..MAX_DUTY).
-  * @retval Duty value for PWM. 0 = coast, MAX_DUTY = 100%.
+ * @brief  Get current duty cycle command (0..TIM1_MAX_DUTY).
+ * @retval Duty value for PWM. 0 = coast, TIM1_MAX_DUTY = 100% (see pwm_config.h).
   */
 uint16_t MotorControl_GetDuty(void);
 

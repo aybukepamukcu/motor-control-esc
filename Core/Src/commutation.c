@@ -131,6 +131,14 @@ void Commutation_Update(uint16_t duty)
     return;
   }
 
+  {
+    uint16_t arr = (uint16_t)(TIM1->ARR & 0xFFFFU);
+    if (duty > arr)
+    {
+      duty = arr;
+    }
+  }
+
   if (hall != last_hall_state)
   {
     /* Disable the previously open channels. */

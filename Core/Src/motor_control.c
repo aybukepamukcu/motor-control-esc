@@ -9,12 +9,12 @@
   */
 
 #include "motor_control.h"
+#include "pwm_config.h"
 #include "sensors.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define THROTTLE_MIN      800U
 #define THROTTLE_MAX      3200U
-#define MAX_DUTY          9999U
 #define RAMP_STEP         20U
 
 /* Throttle low-pass: throttle_filtered = 0.8*prev + 0.2*raw */
@@ -76,13 +76,17 @@ void MotorControl_Update(uint8_t brake_active, uint8_t fault_active)
   }
   else if (throttle_filtered > (float)THROTTLE_MAX)
   {
-    target_duty = MAX_DUTY;
+    target_duty = TIM1_MAX_DUTY;
   }
   else
   {
     target_duty = (uint32_t)((throttle_filtered - (float)THROTTLE_MIN)
-                             * (float)MAX_DUTY
+                             * (float)TIM1_MAX_DUTY
                              / (float)(THROTTLE_MAX - THROTTLE_MIN));
+    if (target_duty > (uint32_t)TIM1_MAX_DUTY)
+    {
+      target_duty = TIM1_MAX_DUTY;
+    }
   }
 
   /* 6. Apply ramp limiter - move duty toward target_duty by RAMP_STEP */
@@ -108,6 +112,11 @@ void MotorControl_Update(uint8_t brake_active, uint8_t fault_active)
     {
       duty = (uint16_t)target_duty;
     }
+  }
+
+  if (duty > TIM1_MAX_DUTY)
+  {
+    duty = TIM1_MAX_DUTY;
   }
 
   /* TODO: apply duty to TIM1 (PWM) later */
