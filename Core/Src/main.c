@@ -58,7 +58,7 @@ TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
 
-extern volatile uint16_t adc_value;
+extern volatile uint16_t throttle_raw;
 
 /* USER CODE END PV */
 
@@ -111,7 +111,7 @@ int main(void)
   MX_ADC1_Init();
   MX_FDCAN1_Init();
   MX_TIM1_Init();
-  MX_I2C1_Init();
+  //MX_I2C1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
@@ -147,6 +147,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  Commutation_DisableAllPhases();
 
   /* Start ADC timer and ADC itself for reading the throttle value. */
   HAL_TIM_Base_Start(&htim3);
@@ -237,7 +239,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T3_TRGO;
@@ -415,7 +417,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 1000;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -476,9 +478,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 167;
+  htim3.Init.Prescaler = 83;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 999;
+  htim3.Init.Period = 9999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -553,7 +555,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc->Instance == ADC1)
   {
-    adc_value = (uint16_t)HAL_ADC_GetValue(&hadc1);
+    throttle_raw = (uint16_t)HAL_ADC_GetValue(&hadc1);
   }
 }
 

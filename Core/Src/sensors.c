@@ -26,10 +26,9 @@ extern I2C_HandleTypeDef hi2c1;
 
 /* Private variables ---------------------------------------------------------*/
 /* ADC DMA buffer: one conversion per index, filled continuously by DMA */
-volatile uint16_t adc_value;
+volatile uint16_t throttle_raw;
 
 /* Cached sensor values updated by Sensors_Update() */
-static uint16_t throttle_raw;
 static uint16_t current_raw;
 static float temperature_c;
 
@@ -54,11 +53,10 @@ void Sensors_Init(void)
 void Sensors_Update(void)
 {
   /* Copy from ADC DMA buffer - one conversion per index */
-  throttle_raw = adc_value;
   current_raw  = 0U;
 
   /* Read TMP102 temperature over I2C */
-  (void)TMP102_ReadTemperature(&temperature_c);
+  /* (void)TMP102_ReadTemperature(&temperature_c); */
 }
 
 /**

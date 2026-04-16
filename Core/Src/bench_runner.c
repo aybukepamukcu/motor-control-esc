@@ -14,7 +14,8 @@ void BenchRunner_Step_Production(void)
 
 void BenchRunner_Step_IgnoreNonBrakeFaults(void)
 {
-  Sensors_Update();
+  /* TODO: Right now no sensors need manual updates so disable until needed. */
+  /* Sensors_Update(); */
   Safety_Update();
   MotorControl_Update(Safety_IsBrakeActive(), 0U);
   Commutation_Update(MotorControl_GetDuty());

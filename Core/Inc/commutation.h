@@ -15,8 +15,12 @@ extern "C" {
 #include <stdint.h>
 
 void Commutation_Init(void);
-uint8_t Commutation_ReadHallState(void);
 void Commutation_Update(uint16_t duty);
+
+uint8_t Commutation_ReadHallState(void);
+
+void Commutation_DisableAllPhases(void);
+
 uint8_t Commutation_GetLastHallState(void);
 
 #ifdef __cplusplus

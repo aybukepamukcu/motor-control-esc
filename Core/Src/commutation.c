@@ -33,7 +33,7 @@ static uint8_t ReadHallGPIO(void)
   return (uint8_t)(GPIOB->IDR & (uint32_t)0x07);
 }
 
-static void SafeOff_AllPhases(void)
+void Commutation_DisableAllPhases(void)
 {
   /* Disable all of the channels. */
   TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE |
@@ -64,43 +64,31 @@ static void ApplyCommutation(uint8_t hall, uint16_t duty)
       TIM1->CCR1 = duty;
       TIM1->CCR2 = TIM1->ARR;
       TIM1->CCR3 = 0;
-
-      TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2NE;
       break;
     case 2:
       TIM1->CCR1 = 0;
       TIM1->CCR2 = duty;
       TIM1->CCR3 = TIM1->ARR;
-
-      TIM1->CCER |= TIM_CCER_CC2E | TIM_CCER_CC3NE;
       break;
     case 3:
       TIM1->CCR1 = TIM1->ARR;
       TIM1->CCR2 = 0;
       TIM1->CCR3 = duty;
-
-      TIM1->CCER |= TIM_CCER_CC3E | TIM_CCER_CC1NE;
       break;
     case 4:
       TIM1->CCR1 = TIM1->ARR;
       TIM1->CCR2 = duty;
       TIM1->CCR3 = 0;
-
-      TIM1->CCER |= TIM_CCER_CC2E | TIM_CCER_CC1NE;
       break;
     case 5:
       TIM1->CCR1 = duty;
       TIM1->CCR2 = 0;
       TIM1->CCR3 = TIM1->ARR;
-
-      TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3NE;
       break;
     case 6:
       TIM1->CCR1 = 0;
       TIM1->CCR2 = TIM1->ARR;
       TIM1->CCR3 = duty;
-
-      TIM1->CCER |= TIM_CCER_CC3E | TIM_CCER_CC2NE;
       break;
     default:
       break;
@@ -110,7 +98,7 @@ static void ApplyCommutation(uint8_t hall, uint16_t duty)
 void Commutation_Init(void)
 {
   last_hall_state = 0U;
-  SafeOff_AllPhases();
+  Commutation_DisableAllPhases();
 }
 
 uint8_t Commutation_ReadHallState(void)
@@ -126,7 +114,7 @@ void Commutation_Update(uint16_t duty)
 
   if (duty == 0U || !(hall >= 1 && hall <= 6))
   {
-    SafeOff_AllPhases();
+    Commutation_DisableAllPhases();
     last_hall_state = 0U;
     return;
   }
@@ -143,6 +131,9 @@ void Commutation_Update(uint16_t duty)
   {
     /* Disable the previously open channels. */
     TIM1->CCER &= ~HALL_CCER_TABLE[last_hall_state];
+
+    /* Enable the channels for the new hall state. */
+    TIM1->CCER |= HALL_CCER_TABLE[hall];
     last_hall_state = hall;
   }
 
