@@ -16,14 +16,40 @@
 
 static volatile uint8_t last_hall_state;
 
-static const uint32_t HALL_CCER_TABLE[] =
+#define TIM1_PHASE_ENABLE_MASK (TIM_CCER_CC1E | TIM_CCER_CC1NE | \
+                                TIM_CCER_CC2E | TIM_CCER_CC2NE | \
+                                TIM_CCER_CC3E | TIM_CCER_CC3NE)
+
+enum
+{
+  PHASE_FLOAT = 0,
+  PHASE_UV,
+  PHASE_UW,
+  PHASE_VW,
+  PHASE_VU,
+  PHASE_WU,
+  PHASE_WV
+};
+
+static const uint8_t HALL_PHASE_TABLE[] =
+{
+  PHASE_FLOAT,
+  PHASE_UV, /* 001 */
+  PHASE_WU, /* 010 */
+  PHASE_WV, /* 011 */
+  PHASE_VW, /* 100 */
+  PHASE_UW, /* 101 */
+  PHASE_VU  /* 110 */
+};
+
+static const uint32_t PHASE_CCER_TABLE[] =
 {
   0U,
   TIM_CCER_CC1E | TIM_CCER_CC2NE,
-  TIM_CCER_CC2E | TIM_CCER_CC3NE,
-  TIM_CCER_CC3E | TIM_CCER_CC1NE,
-  TIM_CCER_CC2E | TIM_CCER_CC1NE,
   TIM_CCER_CC1E | TIM_CCER_CC3NE,
+  TIM_CCER_CC2E | TIM_CCER_CC3NE,
+  TIM_CCER_CC2E | TIM_CCER_CC1NE,
+  TIM_CCER_CC3E | TIM_CCER_CC1NE,
   TIM_CCER_CC3E | TIM_CCER_CC2NE
 };
 
@@ -36,9 +62,7 @@ static uint8_t ReadHallGPIO(void)
 void Commutation_DisableAllPhases(void)
 {
   /* Disable all of the channels. */
-  TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE |
-                  TIM_CCER_CC2E | TIM_CCER_CC2NE |
-                  TIM_CCER_CC3E | TIM_CCER_CC3NE);
+  TIM1->CCER &= ~TIM1_PHASE_ENABLE_MASK;
 
   /* Set all of the duty cycles to zero. */
   TIM1->CCR1 = 0;
@@ -46,46 +70,36 @@ void Commutation_DisableAllPhases(void)
   TIM1->CCR3 = 0;
 }
 
-static void LowSide_Activate(uint8_t phase)
+static void ApplyCommutation(uint8_t phase, uint16_t duty)
 {
-  (void)phase;
-}
-
-static void LowSide_Deactivate(uint8_t phase)
-{
-  (void)phase;
-}
-
-static void ApplyCommutation(uint8_t hall, uint16_t duty)
-{
-  switch (hall)
+  switch (phase)
   {
-    case 1:
+    case PHASE_UV:
       TIM1->CCR1 = duty;
       TIM1->CCR2 = TIM1->ARR;
       TIM1->CCR3 = 0;
       break;
-    case 2:
-      TIM1->CCR1 = 0;
-      TIM1->CCR2 = duty;
-      TIM1->CCR3 = TIM1->ARR;
-      break;
-    case 3:
-      TIM1->CCR1 = TIM1->ARR;
-      TIM1->CCR2 = 0;
-      TIM1->CCR3 = duty;
-      break;
-    case 4:
-      TIM1->CCR1 = TIM1->ARR;
-      TIM1->CCR2 = duty;
-      TIM1->CCR3 = 0;
-      break;
-    case 5:
+    case PHASE_UW:
       TIM1->CCR1 = duty;
       TIM1->CCR2 = 0;
       TIM1->CCR3 = TIM1->ARR;
       break;
-    case 6:
+    case PHASE_VW:
+      TIM1->CCR1 = 0;
+      TIM1->CCR2 = duty;
+      TIM1->CCR3 = TIM1->ARR;
+      break;
+    case PHASE_VU:
+      TIM1->CCR1 = TIM1->ARR;
+      TIM1->CCR2 = duty;
+      TIM1->CCR3 = 0;
+      break;
+    case PHASE_WU:
+      TIM1->CCR1 = TIM1->ARR;
+      TIM1->CCR2 = 0;
+      TIM1->CCR3 = duty;
+      break;
+    case PHASE_WV:
       TIM1->CCR1 = 0;
       TIM1->CCR2 = TIM1->ARR;
       TIM1->CCR3 = duty;
@@ -109,6 +123,7 @@ uint8_t Commutation_ReadHallState(void)
 void Commutation_Update(uint16_t duty)
 {
   uint8_t hall;
+  uint8_t phase;
 
   hall = ReadHallGPIO();
 
@@ -127,17 +142,18 @@ void Commutation_Update(uint16_t duty)
     }
   }
 
+  phase = HALL_PHASE_TABLE[hall];
+
   if (hall != last_hall_state)
   {
-    /* Disable the previously open channels. */
-    TIM1->CCER &= ~HALL_CCER_TABLE[last_hall_state];
-
-    /* Enable the channels for the new hall state. */
-    TIM1->CCER |= HALL_CCER_TABLE[hall];
+    TIM1->CCER &= ~TIM1_PHASE_ENABLE_MASK;
+    ApplyCommutation(phase, duty);
+    TIM1->CCER |= PHASE_CCER_TABLE[phase];
     last_hall_state = hall;
+    return;
   }
 
-  ApplyCommutation(hall, duty);
+  ApplyCommutation(phase, duty);
 }
 
 uint8_t Commutation_GetLastHallState(void)
